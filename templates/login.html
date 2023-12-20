@@ -1,0 +1,9 @@
+    <div class="columns" id="login">
+      <input class="column is-four-fifths input is-primary" type="text" name="username" placeholder="Username">
+      <button class="column button is-link" hx-post="/login" hx-trigger="click" hx-target="#content"
+        hx-include="[name = 'username']">
+        Login
+    </div>
+      <div class="notification is-danger" id="error_message">
+      {{.ErrorMessage}}        
+      </div>

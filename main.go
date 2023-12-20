@@ -51,16 +51,32 @@ func main() {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Body)
-	fmt.Println(r.FormValue("username"))
+	username := r.FormValue("username")
+	if _, exists := users[username]; exists {
+		errorMessage := "Username is already taken."
+
+		t, err := template.ParseFiles("templates/login.html")
+		if err != nil {
+			fmt.Println("Error loading template login.html")
+		}
+
+		err = t.Execute(w, viewmodels.LoginViewModel{ErrorMessage: errorMessage})
+		if err != nil {
+			fmt.Println("Error parsing template login.html")
+		}
+
+		return
+	}
+
 	t, err := template.ParseFiles("templates/chat-room.html")
 	if err != nil {
 		fmt.Println("Error loading template chat-room.html")
+
 		return
 	}
 
 	viewModel := viewmodels.ChatRoomViewModel{
-		Username:     r.FormValue("username"),
+		Username:     username,
 		ChatRoomName: "Lobby",
 	}
 
@@ -77,8 +93,34 @@ func parseHtmxMessage(b []byte) map[string]string {
 	return result
 }
 
-func handleCloseConnection(code int, text string) error {
+func handleCloseConnection(user *User, code int, text string) error {
+	fmt.Println("Close connection for user " + user.Username)
+	delete(users, user.Username)
+	removeUserFromChatRoom("Lobby", user.Username)
 	return nil
+}
+
+func removeUserFromChatRoom(chatRoomName, username string) {
+	chatRoom, exists := chatRooms[chatRoomName]
+	if !exists {
+		fmt.Println("ChatRoom not found")
+		return
+	}
+
+	for i, user := range chatRoom.Users {
+		if user.Username == username {
+			// moves last user to current user index and truncates the slice
+			chatRoom.Users[i] = chatRoom.Users[len(chatRoom.Users)-1]
+			chatRoom.Users = chatRoom.Users[:len(chatRoom.Users)-1]
+
+			user.Conn.Close()
+
+			fmt.Printf("User %s removed from chat room %s\n", username, chatRoomName)
+			return
+		}
+	}
+
+	fmt.Printf("User %s not found in chat room %s\n", username, chatRoomName)
 }
 
 func buildChatMessage(username string, message string) *bytes.Buffer {
@@ -105,6 +147,12 @@ func buildChatMessage(username string, message string) *bytes.Buffer {
 	return &buf
 }
 
+func (u *User) SetCloseHandler() {
+	u.Conn.SetCloseHandler(func(code int, text string) error {
+		return handleCloseConnection(u, code, text)
+	})
+}
+
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -112,20 +160,18 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn.SetCloseHandler(handleCloseConnection)
-	defer conn.Close()
-
 	username := r.URL.Query().Get("username")
-
-	users[username] = &User{
+	user := &User{
 		Username: username,
 		Conn:     conn,
 	}
 
-	chatRooms["Lobby"].Users = append(chatRooms["Lobby"].Users, users[username])
+	user.SetCloseHandler()
 
-	fmt.Println(chatRooms)
-	fmt.Println(chatRooms["Lobby"].Users)
+	users[username] = user
+	chatRooms["Lobby"].Users = append(chatRooms["Lobby"].Users, users[username])
+	defer conn.Close()
+
 	fmt.Println("Client connected")
 
 	for {
@@ -139,8 +185,6 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		chatMessage := buildChatMessage(username, message)
 
 		for _, user := range chatRooms["Lobby"].Users {
-			fmt.Println(chatMessage)
-			fmt.Println(user)
 			if user.Conn != nil {
 				if err := user.Conn.WriteMessage(websocket.TextMessage, chatMessage.Bytes()); err != nil {
 					fmt.Println(err)

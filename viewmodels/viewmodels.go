@@ -11,3 +11,7 @@ type ChatRoomViewModel struct {
 	Username     string
 	ChatRoomName string
 }
+
+type LoginViewModel struct {
+	ErrorMessage string
+}
