@@ -1,0 +1,7 @@
+<div class="mt-4" hx-ws="connect:ws:localhost:8080/ws?username={{.Username}}">
+      <div id="ws_room" hx-swap="innerHTML">
+      </div>
+      <form hx-ws="send:submit">
+        <input class="input is-primary" type="text" name="ws_message" hx-trigger="changed" placeholder="Send a message ...">
+      </form>
+    </div>
