@@ -8,6 +8,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/MorrisMorrison/gchat/viewmodels"
 	"github.com/gorilla/websocket"
 )
 
@@ -18,24 +19,18 @@ var upgrader = websocket.Upgrader{
 }
 
 type User struct {
-	conn     *websocket.Conn
-	username string
+	Conn     *websocket.Conn
+	Username string
 }
 
-type ChatMessageViewModel struct {
-	Username string
-	DateTime string
-	Message  string
-}
-
-type ChatRoomViewModel struct {
-	Username string
+type ChatRoom struct {
+	Name  string
+	Users []*User
 }
 
 var (
-	usernameToConnection = make(map[string]*websocket.Conn)
-	users                = make([]*User, 20)
-	chatRooms            = make([]string, 20)
+	users     = make(map[string]*User)
+	chatRooms = make(map[string]*ChatRoom)
 )
 
 func main() {
@@ -45,6 +40,11 @@ func main() {
 
 	fs := http.FileServer(http.Dir("public"))
 	http.Handle("/", http.StripPrefix("/", fs))
+
+	chatRooms["Lobby"] = &ChatRoom{
+		Name:  "Lobby",
+		Users: make([]*User, 20),
+	}
 
 	fmt.Println("## gchat server is running on port 8080 ##")
 	http.ListenAndServe(":8080", nil)
@@ -59,8 +59,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viewModel := ChatRoomViewModel{
-		Username: r.FormValue("username"),
+	viewModel := viewmodels.ChatRoomViewModel{
+		Username:     r.FormValue("username"),
+		ChatRoomName: "Lobby",
 	}
 
 	err = t.Execute(w, viewModel)
@@ -86,14 +87,21 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 		return
 	}
+
 	conn.SetCloseHandler(handleCloseConnection)
 	defer conn.Close()
+
 	username := r.URL.Query().Get("username")
-	if _, exists := usernameToConnection[username]; exists {
+	if _, exists := users[username]; exists {
 		return
 	}
 
-	usernameToConnection[username] = conn
+	users[username] = &User{
+		Username: username,
+		Conn:     conn,
+	}
+
+	chatRooms["Lobby"].Users = append(chatRooms["Lobby"].Users, users[username])
 
 	fmt.Println("Client connected")
 
@@ -113,7 +121,7 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		currentTime := time.Now()
 		currentTimeString := currentTime.Format("02.01.2006 - 15:04:05")
 		message := parseHtmxMessage(p)["ws_message"]
-		viewModel := ChatMessageViewModel{
+		viewModel := viewmodels.ChatMessageViewModel{
 			Username: username,
 			DateTime: currentTimeString,
 			Message:  message,

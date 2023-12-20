@@ -1,3 +1,6 @@
+<div class="columns mt-4">
+  <div class="column container is-four-fifths">
+      <h3 class="menu-label">Room: {{.ChatRoomName}}</h3>
 <div class="mt-4" hx-ws="connect:ws:localhost:8080/ws?username={{.Username}}">
       <div id="ws_room" hx-swap="innerHTML">
       </div>
@@ -5,3 +8,22 @@
         <input class="input is-primary" type="text" name="ws_message" hx-trigger="changed" placeholder="Send a message ...">
       </form>
     </div>
+  </div>
+  <div class="column container">
+   <aside class="menu">
+  <p class="menu-label">
+   ChatRooms 
+  </p>
+  <ul class="menu-list">
+    <li><a>Lobby</a></li>
+    <li><a>Room 1</a></li>
+    <li><a>Room 2</a></li>
+    <li><a>Room 3</a></li>
+    <li><a>Room 4</a></li>
+    <li><a>Room 5</a></li>
+        
+  </ul>
+</aside> 
+  </div>
+</div>
+
