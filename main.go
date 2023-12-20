@@ -43,7 +43,7 @@ func main() {
 
 	chatRooms["Lobby"] = &ChatRoom{
 		Name:  "Lobby",
-		Users: make([]*User, 20),
+		Users: make([]*User, 0),
 	}
 
 	fmt.Println("## gchat server is running on port 8080 ##")
@@ -81,6 +81,30 @@ func handleCloseConnection(code int, text string) error {
 	return nil
 }
 
+func buildChatMessage(username string, message string) *bytes.Buffer {
+	t, err := template.ParseFiles("templates/chat-message.html")
+	if err != nil {
+		fmt.Println("Error loading template chat-message.html")
+	}
+
+	currentTime := time.Now()
+	currentTimeString := currentTime.Format("02.01.2006 - 15:04:05")
+	viewModel := viewmodels.ChatMessageViewModel{
+		Username:        username,
+		DateTime:        currentTimeString,
+		Message:         message,
+		IsSystemMessage: false,
+	}
+
+	var buf bytes.Buffer
+	parseErr := t.Execute(&buf, viewModel)
+	if parseErr != nil {
+		fmt.Println("Error parsing template chat-message.html")
+	}
+
+	return &buf
+}
+
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -92,9 +116,6 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	username := r.URL.Query().Get("username")
-	if _, exists := users[username]; exists {
-		return
-	}
 
 	users[username] = &User{
 		Username: username,
@@ -103,13 +124,9 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 	chatRooms["Lobby"].Users = append(chatRooms["Lobby"].Users, users[username])
 
+	fmt.Println(chatRooms)
+	fmt.Println(chatRooms["Lobby"].Users)
 	fmt.Println("Client connected")
-
-	t, err := template.ParseFiles("templates/chat-message.html")
-	if err != nil {
-		fmt.Println("Error loading template chat-message.html")
-		return
-	}
 
 	for {
 		_, p, err := conn.ReadMessage()
@@ -118,25 +135,21 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		currentTime := time.Now()
-		currentTimeString := currentTime.Format("02.01.2006 - 15:04:05")
 		message := parseHtmxMessage(p)["ws_message"]
-		viewModel := viewmodels.ChatMessageViewModel{
-			Username: username,
-			DateTime: currentTimeString,
-			Message:  message,
-		}
+		chatMessage := buildChatMessage(username, message)
 
-		var buf bytes.Buffer
-		parseErr := t.Execute(&buf, viewModel)
-		if parseErr != nil {
-			fmt.Println("Error parsing template chat-message.html")
+		for _, user := range chatRooms["Lobby"].Users {
+			fmt.Println(chatMessage)
+			fmt.Println(user)
+			if user.Conn != nil {
+				if err := user.Conn.WriteMessage(websocket.TextMessage, chatMessage.Bytes()); err != nil {
+					fmt.Println(err)
+					return
+				}
+			} else {
+				fmt.Println("Found user with nil connection")
+				return
+			}
 		}
-		// TODO broadcast to all connections
-		if err := conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
-			fmt.Println(err)
-			return
-		}
-
 	}
 }

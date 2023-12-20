@@ -1,5 +1,9 @@
   <div hx-swap-oob="beforeend:#ws_room">
-  <div class="message is-link"> 
+  {{if .IsSystemMessage}}  
+  <div class="message is-primary">
+  {{else}}
+  <div class="message is-link">
+  {{end}}
           <div class="message-header">
         <p class="">{{.Username}} - {{.DateTime}}</p>
           </div>
