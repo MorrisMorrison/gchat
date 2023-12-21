@@ -1,4 +1,4 @@
-package ghtmx
+package htmxbuilder
 
 import (
 	"fmt"
