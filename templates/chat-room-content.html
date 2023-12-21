@@ -1,0 +1,31 @@
+{{define "chat-room-content"}}
+<div class="columns" id="chat_content">
+  <div class="column container is-four-fifths" id="chat_content" name="chat_content">
+    <h3 class="menu-label">Room: {{.ChatRoomName}}</h3>
+    <div class="mt-4">
+      <div id="ws_room" hx-swap="innerHTML">
+      </div>
+      <form hx-ws="send:submit">
+        <input class="input is-primary" type="text" name="ws_message" hx-trigger="changed"
+          placeholder="Send a message ...">
+      </form>
+    </div>
+  </div>
+  <div class="column container">
+    <aside class="menu">
+      <p class="menu-label">
+        ChatRooms
+      </p>
+      <ul class="menu-list">
+        {{range .Rooms}}
+        <li><a hx-post="/join" hx-target="#chat_content" hx-trigger="click" hx-swap="outerHTML"
+            hx-vals='{"username": "{{$.Username}}", "room": "{{.}}"}'>{{.}}
+          </a>
+        </li>
+        {{end}}
+      </ul>
+    </aside>
+  </div>
+</div>
+
+{{end}}

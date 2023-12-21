@@ -10,6 +10,7 @@ type ChatMessageViewModel struct {
 type ChatRoomViewModel struct {
 	Username     string
 	ChatRoomName string
+	Rooms        []string
 }
 
 type LoginViewModel struct {
