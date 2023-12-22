@@ -6,9 +6,23 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/MorrisMorrison/gchat/services/chatservice"
-	"github.com/MorrisMorrison/gchat/viewmodels"
+	chatService "github.com/MorrisMorrison/gchat/services/chatservice"
+	viewModels "github.com/MorrisMorrison/gchat/viewmodels"
 )
+
+func BuildLoginTemplate(errorMessage string) *bytes.Buffer {
+	t, err := template.ParseFiles("templates/login.html")
+	if err != nil {
+		fmt.Println("Error loading template login.html")
+	}
+	var buf bytes.Buffer
+	err = t.Execute(&buf, viewModels.LoginViewModel{ErrorMessage: errorMessage})
+	if err != nil {
+		fmt.Println("Error parsing template login.html")
+	}
+
+	return &buf
+}
 
 func BuildChatRoomContentTemplate(chatRoomName string, username string) *bytes.Buffer {
 	t, err := template.ParseFiles("templates/chat-room-content.html")
@@ -16,10 +30,10 @@ func BuildChatRoomContentTemplate(chatRoomName string, username string) *bytes.B
 		fmt.Println("Error loading template chat-room-content.html")
 	}
 
-	viewModel := viewmodels.ChatRoomViewModel{
+	viewModel := viewModels.ChatRoomViewModel{
 		Username:     username,
 		ChatRoomName: chatRoomName,
-		Rooms:        chatservice.ChatRoomNames,
+		Rooms:        chatService.ChatRoomNames,
 	}
 
 	var buf bytes.Buffer
@@ -37,10 +51,10 @@ func BuildChatRoomTemplate(chatRoomName string, username string) *bytes.Buffer {
 		fmt.Println("Error loading template chat-room.html")
 	}
 
-	viewModel := viewmodels.ChatRoomViewModel{
+	viewModel := viewModels.ChatRoomViewModel{
 		Username:     username,
 		ChatRoomName: chatRoomName,
-		Rooms:        chatservice.ChatRoomNames,
+		Rooms:        chatService.ChatRoomNames,
 	}
 
 	var buf bytes.Buffer
@@ -60,7 +74,7 @@ func BuildChatMessageTemplate(username string, message string) *bytes.Buffer {
 
 	currentTime := time.Now()
 	currentTimeString := currentTime.Format("02.01.2006 - 15:04:05")
-	viewModel := viewmodels.ChatMessageViewModel{
+	viewModel := viewModels.ChatMessageViewModel{
 		Username:        username,
 		DateTime:        currentTimeString,
 		Message:         message,
