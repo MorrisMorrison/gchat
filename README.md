@@ -1,4 +1,4 @@
-# Gchat
+# gchat
 The purpose of this project is to mess around with Golang, HTMX and Bulma CSS.
 
 ## Overview

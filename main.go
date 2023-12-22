@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 
 	"github.com/MorrisMorrison/gchat/logger"
 	chatService "github.com/MorrisMorrison/gchat/services/chatservice"
@@ -19,6 +20,11 @@ var upgrader = websocket.Upgrader{
 func main() {
 	logger.Log.Info("start gchat server.")
 
+	port := os.Getenv("GCHAT_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/join", join)
 	http.HandleFunc("/ws", handleWebSocketConnection)
@@ -29,7 +35,7 @@ func main() {
 	chatService.InitializeChatRooms()
 
 	logger.Log.Info("gchat server is running on port 8080 ##")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func join(w http.ResponseWriter, r *http.Request) {
