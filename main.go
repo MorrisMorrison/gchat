@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"net/http"
 	"os"
 	"strconv"
@@ -148,6 +149,11 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.URL.Query().Get("username")
+	if sanitizedUsername := template.JSEscapeString(username); sanitizedUsername == "" {
+		logger.Log.Warningf("Possible XSS found in username %s", username)
+		username = "Idiot"
+	}
+
 	user := &chatService.User{
 		Username: username,
 		Conn:     conn,
@@ -170,20 +176,25 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		}
 
 		message := parseHtmxMessage(p)["ws_message"]
-		chatMessage, err := templateService.BuildChatMessageTemplate(username, message)
+		if sanitizedMessage := template.JSEscapeString(message); sanitizedMessage == "" {
+			logger.Log.Warningf("Possible XSS found in message %s", message)
+			return
+		}
+
+		chatMessageTemplate, err := templateService.BuildChatMessageTemplate(username, message)
 		if err != nil {
 			return
 		}
 
 		chatRoom, err := chatService.FindUserChatRoom(user)
 		if err != nil {
-			logger.Log.Error(err, "Could not find current chat room")
+			logger.Log.Errorf(err, "Could not find current chat room for user %s", username)
 			return
 		}
 
 		for _, user := range chatService.GetChatRoomUsersByChatRoomName(chatRoom.Name) {
 			if user.Conn != nil {
-				if err := user.Conn.WriteMessage(websocket.TextMessage, chatMessage.Bytes()); err != nil {
+				if err := user.Conn.WriteMessage(websocket.TextMessage, chatMessageTemplate.Bytes()); err != nil {
 					logger.Log.Errorf(err, "Could not write message to websocket connection of user %s", username)
 					return
 				}
