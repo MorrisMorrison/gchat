@@ -23,13 +23,7 @@
       </p>
     </div>
   </section>
-  <div class="container" id="content" name="content">
-    <div class="columns" id="login">
-      <input class="column is-four-fifths input is-primary" type="text" name="username" placeholder="Username">
-      <button class="column button is-link" hx-post="/login" hx-trigger="click" hx-target="#content"
-        hx-include="[name = 'username']">
-        Login
-    </div>
+  <div hx-get="/login" hx-trigger="load" hx-target="#content" class="container" id="content" name="content">
   </div>
 </body>
 

@@ -59,10 +59,16 @@ func join(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		w.Header().Set("Allow", "POST, GET")
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		w.Write([]byte("405 - Method Not Allowed. Use POST."))
+		w.Write([]byte("405 - Method Not Allowed. Use GET or POST."))
+		return
+	}
+
+	if r.Method == http.MethodGet {
+		buf := templateService.BuildLoginTemplate("")
+		w.Write(buf.Bytes())
 		return
 	}
 
