@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/MorrisMorrison/gchat/logger"
 	chatService "github.com/MorrisMorrison/gchat/services/chatservice"
@@ -20,10 +21,7 @@ var upgrader = websocket.Upgrader{
 func main() {
 	logger.Log.Info("start gchat server.")
 
-	port := os.Getenv("GCHAT_PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := getPort()
 
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/join", join)
@@ -36,6 +34,27 @@ func main() {
 
 	logger.Log.Info("gchat server is running on port 8080 ##")
 	http.ListenAndServe(":"+port, nil)
+}
+
+func getPort() string {
+	port := os.Getenv("GCHAT_PORT")
+	if port == "" {
+		logger.Log.Info("Env variable GCHAT_PORT is not set. Use default port 8080.")
+		return "8080"
+	}
+
+	portNumber, err := strconv.Atoi(port)
+	if err != nil {
+		logger.Log.Info("Env variable GCHAT_PORT %s is not a valid integer. Use default port 8080.")
+		return "8080"
+	}
+
+	if portNumber > 65536 {
+		logger.Log.Info("Provided port number %d is invalid, because it is larger than 65536. Use default port 8080.")
+		return "8080"
+	}
+
+	return port
 }
 
 func join(w http.ResponseWriter, r *http.Request) {
