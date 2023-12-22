@@ -3,6 +3,7 @@ package chatservice
 import (
 	"fmt"
 
+	"github.com/MorrisMorrison/gchat/logger"
 	"github.com/gorilla/websocket"
 )
 
@@ -53,13 +54,13 @@ func GetChatRoomUsersByChatRoomName(chatRoomName string) []*User {
 func RemoveUserFromChatRoomByName(chatRoomName, username string) {
 	chatRoom, exists := chatRooms[chatRoomName]
 	if !exists {
-		fmt.Println("ChatRoom not found")
+		logger.Log.Debugf("ChatRoom %s not found", chatRoomName)
 		return
 	}
 
 	user, exists := users[username]
 	if !exists {
-		fmt.Println("User not found")
+		logger.Log.Debugf("User %s not found", username)
 	}
 
 	RemoveUserFromChatRoomByReference(chatRoom, user)
@@ -71,13 +72,12 @@ func RemoveUserFromChatRoomByReference(chatRoom *ChatRoom, user *User) {
 			chatRoom.Users[i] = chatRoom.Users[len(chatRoom.Users)-1]
 			chatRoom.Users = chatRoom.Users[:len(chatRoom.Users)-1]
 
-			fmt.Printf("User %s removed from chat room %s\n", user.Username, chatRoom.Name)
-			fmt.Println()
+			logger.Log.Infof("User %s removed from chat room %s", user.Username, chatRoom.Name)
 			return
 		}
 	}
 
-	fmt.Printf("User %s not found in chat room %s\n", user.Username, chatRoom.Name)
+	logger.Log.Infof("User %s not found in chat room %s", user.Username, chatRoom.Name)
 }
 
 func RemoveUserByName(username string) {
@@ -102,11 +102,11 @@ func UserExists(username string) bool {
 }
 
 func handleCloseConnection(user *User, _ int, _ string) error {
-	fmt.Println("Close connection for user " + user.Username)
+	logger.Log.Debugf("Close connection for user %s", user.Username)
 	RemoveUserByName(user.Username)
 	chatRoom, err := FindUserChatRoom(user)
 	if err != nil {
-		fmt.Println("Could not find chat room for user")
+		logger.Log.Errorf(err, "Could not find chat room for user %s", user.Username)
 		return fmt.Errorf("could not find chat room for user")
 	}
 	RemoveUserFromChatRoomByReference(chatRoom, user)

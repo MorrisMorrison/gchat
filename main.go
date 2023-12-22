@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
+	"github.com/MorrisMorrison/gchat/logger"
 	chatService "github.com/MorrisMorrison/gchat/services/chatservice"
 	templateService "github.com/MorrisMorrison/gchat/services/templateservice"
 	"github.com/gorilla/websocket"
@@ -17,7 +17,8 @@ var upgrader = websocket.Upgrader{
 }
 
 func main() {
-	fmt.Println("### start gchat server ###")
+	logger.Log.Info("start gchat server.")
+
 	http.HandleFunc("/login", login)
 	http.HandleFunc("/join", join)
 	http.HandleFunc("/ws", handleWebSocketConnection)
@@ -27,21 +28,27 @@ func main() {
 
 	chatService.InitializeChatRooms()
 
-	fmt.Println("## gchat server is running on port 8080 ##")
+	logger.Log.Info("gchat server is running on port 8080 ##")
 	http.ListenAndServe(":8080", nil)
 }
 
 func join(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("405 - Method Not Allowed. Use POST."))
+		return
+	}
+
 	username := r.FormValue("username")
 	room := r.FormValue("room")
 
-	fmt.Printf("User %s join room %s", username, room)
-	fmt.Println()
+	logger.Log.Infof("User %s join room %s", username, room)
 	// remove user from current room
 	user := chatService.FindUserByName(username)
 	currentChatRoom, err := chatService.FindUserChatRoom(user)
 	if err != nil {
-		fmt.Println("Could not find user in any chatroom")
+		logger.Log.Infof("Could not find user %s in any chatroom", username)
 		return
 	}
 
@@ -52,6 +59,13 @@ func join(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("405 - Method Not Allowed. Use POST."))
+		return
+	}
+
 	username := r.FormValue("username")
 	if chatService.UserExists(username) {
 		errorMessage := "Username is already taken."
@@ -71,9 +85,16 @@ func parseHtmxMessage(b []byte) map[string]string {
 }
 
 func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("405 - Method Not Allowed. Use GET."))
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println(err)
+		logger.Log.Error(err, "Could not upgrade connection to websocket connection.")
 		return
 	}
 
@@ -90,12 +111,12 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 	defer conn.Close()
 
-	fmt.Println("Client connected")
+	logger.Log.Info("Client connected")
 
 	for {
 		_, p, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println(err)
+			logger.Log.Error(err, "Could not read message from websocket connection.")
 			return
 		}
 
@@ -104,18 +125,18 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 
 		chatRoom, err := chatService.FindUserChatRoom(user)
 		if err != nil {
-			fmt.Print("Could not find current chat room")
+			logger.Log.Error(err, "Could not find current chat room")
 			return
 		}
 
 		for _, user := range chatService.GetChatRoomUsersByChatRoomName(chatRoom.Name) {
 			if user.Conn != nil {
 				if err := user.Conn.WriteMessage(websocket.TextMessage, chatMessage.Bytes()); err != nil {
-					fmt.Println(err)
+					logger.Log.Errorf(err, "Could not write message to websocket connection of user %s", username)
 					return
 				}
 			} else {
-				fmt.Println("Found user with nil connection")
+				logger.Log.Info("Found user with nil connection")
 				return
 			}
 		}
