@@ -55,7 +55,12 @@ func join(w http.ResponseWriter, r *http.Request) {
 	chatService.RemoveUserFromChatRoomByReference(currentChatRoom, user)
 	chatService.AddUserToChatRoom(room, user)
 
-	w.Write(templateService.BuildChatRoomContentTemplate(room, username).Bytes())
+	t, err := templateService.BuildChatRoomContentTemplate(room, username)
+	if err != nil {
+		return
+	}
+
+	w.Write(t.Bytes())
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -67,8 +72,12 @@ func login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		buf := templateService.BuildLoginTemplate("")
-		w.Write(buf.Bytes())
+		t, err := templateService.BuildLoginTemplate("")
+		if err != nil {
+			return
+		}
+
+		w.Write(t.Bytes())
 		return
 	}
 
@@ -76,12 +85,21 @@ func login(w http.ResponseWriter, r *http.Request) {
 	if chatService.UserExists(username) {
 		errorMessage := "Username is already taken."
 
-		buf := templateService.BuildLoginTemplate(errorMessage)
-		w.Write(buf.Bytes())
+		t, err := templateService.BuildLoginTemplate(errorMessage)
+		if err != nil {
+			return
+		}
+
+		w.Write(t.Bytes())
 		return
 	}
 
-	w.Write(templateService.BuildChatRoomTemplate("Lobby", username).Bytes())
+	t, err := templateService.BuildChatRoomTemplate("Lobby", username)
+	if err != nil {
+		return
+	}
+
+	w.Write(t.Bytes())
 }
 
 func parseHtmxMessage(b []byte) map[string]string {
@@ -127,7 +145,10 @@ func handleWebSocketConnection(w http.ResponseWriter, r *http.Request) {
 		}
 
 		message := parseHtmxMessage(p)["ws_message"]
-		chatMessage := templateService.BuildChatMessageTemplate(username, message)
+		chatMessage, err := templateService.BuildChatMessageTemplate(username, message)
+		if err != nil {
+			return
+		}
 
 		chatRoom, err := chatService.FindUserChatRoom(user)
 		if err != nil {
