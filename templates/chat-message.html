@@ -1,14 +1,14 @@
-  <div hx-swap-oob="beforeend:#ws_room">
-  {{if .IsSystemMessage}}  
-  <div class="message is-primary">
-  {{else}}
-  <div class="message is-link">
-  {{end}}
-          <div class="message-header">
+<div id="ws_room" hx-swap-oob="beforeend">
+  {{if .IsSystemMessage}}
+  <div class=" message is-primary">
+    {{else}}
+    <div class="message is-link">
+      {{end}}
+      <div class="message-header">
         <p class="">{{.Username}} - {{.DateTime}}</p>
-          </div>
-          <div class="message-body">
-        {{.Message}} 
-          </div>
-        </div>
+      </div>
+      <div class="message-body">
+        {{.Message}}
+      </div>
+    </div>
   </div>

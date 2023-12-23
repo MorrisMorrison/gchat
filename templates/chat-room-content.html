@@ -1,13 +1,14 @@
 {{define "chat-room-content"}}
 <div class="columns" id="chat_content">
   <div class="column container is-four-fifths mt-2" id="chat_content" name="chat_content">
-    <h3 class="menu-label box">Room: {{.ChatRoomName}}</h3>
+    <h3 class="menu-label box">User: <span class="has-text-weight-bold">{{.Username}}</span> - Room: <span
+        class="has-text-weight-bold">{{.ChatRoomName}}</span></h3>
     <div class="mt-2 box">
-      <div id="ws_room" style="height: 65vh; overflow-y: auto;">
+      <div id="ws_room" style="height: 65vh; overflow-y: auto; scroll-behavior: smooth;">
       </div>
-      <form hx-ws="send:submit">
-        <input class="input is-primary" type="text" name="ws_message" hx-trigger="changed"
-          placeholder="Send a message ...">
+      <form hx-ws="send:submit" class="is-flex">
+        <input class="input is-primary" type="text" name="ws_message" placeholder="Send a message ...">
+        <button type="submit" class="button is-link ml-1">Send</button>
       </form>
     </div>
   </div>
@@ -27,5 +28,4 @@
     </aside>
   </div>
 </div>
-
 {{end}}

@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/htmx.org@1.9.9"
     integrity="sha384-QFjmbokDn2DjBjq+fM+8LUIVrAgqcNW2s0PjAxHETgRn9l4fvX31ZxDxvwQnyMOX"
     crossorigin="anonymous"></script>
+  <!--<script type="text/javascript" src="htmx.js"></script>-->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
 </head>
 
@@ -25,6 +26,17 @@
   </section>
   <div hx-get="/login" hx-trigger="load" hx-target="#content" class="container" id="content" name="content">
   </div>
+
+  <script>
+    function scrollToBottom() {
+      var wsRoom = document.getElementById("ws_room");
+      wsRoom.scrollTop = wsRoom.scrollHeight;
+    }
+    document.body.addEventListener('htmx:oobAfterSwap', function (event) {
+      if (event.detail.target.id === "ws_room") {
+        scrollToBottom();
+      }
+    });</script>
 </body>
 
 </html>
