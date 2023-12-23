@@ -7,6 +7,7 @@ import (
 
 	"github.com/MorrisMorrison/gchat/logger"
 	chatService "github.com/MorrisMorrison/gchat/services/chatservice"
+	configService "github.com/MorrisMorrison/gchat/services/configurationservice"
 	viewModels "github.com/MorrisMorrison/gchat/viewmodels"
 )
 
@@ -61,6 +62,8 @@ func BuildChatRoomTemplate(chatRoomName string, username string) (*bytes.Buffer,
 		Username:     username,
 		ChatRoomName: chatRoomName,
 		Rooms:        chatService.ChatRoomNames,
+		BaseUrl:      configService.GetBaseUrl(),
+		Port:         configService.GetPort(),
 	}
 
 	var buf bytes.Buffer

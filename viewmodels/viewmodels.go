@@ -11,6 +11,8 @@ type ChatRoomViewModel struct {
 	Username     string
 	ChatRoomName string
 	Rooms        []string
+	BaseUrl      string
+	Port         string
 }
 
 type LoginViewModel struct {

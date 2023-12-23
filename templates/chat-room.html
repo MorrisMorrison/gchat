@@ -1,3 +1,2 @@
-<div class="mt-4" hx-ws="connect:ws:localhost:8080/ws?username={{.Username}}">
-  {{template "chat-room-content" .}}
-</div>
+<div class="mt-4" hx-ws="connect:ws:{{.BaseUrl}}:{{.Port}}/ws?username={{.Username}}">
+  {{template "chat-room-content" .}}</div>
